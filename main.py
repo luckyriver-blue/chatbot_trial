@@ -43,20 +43,6 @@ def get_valid_ids():
   
   return valid_ids
 
-valid_ids = get_valid_ids() #有効なユーザーID
-#クエリパラメータからuser_idを取得（あれば）
-query_params = st.experimental_get_query_params()
-if "user_id" in query_params:
-    query_user_id = query_params.get("user_id", [None])[0]
-    if query_user_id != st.session_state["user_id"]:
-        if query_user_id not in valid_ids:
-            st.session_state["user_id"] = None
-        else:
-            st.session_state["user_id"] = query_user_id
-            st.rerun()
-else:
-    st.session_state["user_id"] = None
-
 
 #firebaseからuser_idを通して会話データを取得する
 def read_firebase_talk_data():
@@ -122,18 +108,19 @@ def send_message():
     db.collection("users").document(st.session_state["user_id"]).collection("conversation").add(output_message_data)
     st.session_state["messages"].append(output_message_data)
 
+valid_ids = get_valid_ids() #有効なユーザーID
 #クエリパラメータからuser_idを取得（あれば）
 query_params = st.experimental_get_query_params()
 if "user_id" in query_params:
-  query_user_id = query_params.get('user_id', [None])[0]
-  if query_user_id != st.session_state['user_id']:
-    if query_user_id not in valid_ids:
-      st.session_state["user_id"] = None
-    else:
-      st.session_state["user_id"] = query_user_id
-      st.rerun()
+    query_user_id = query_params.get("user_id", [None])[0]
+    if query_user_id != st.session_state["user_id"]:
+        if query_user_id not in valid_ids:
+            st.session_state["user_id"] = None
+        else:
+            st.session_state["user_id"] = query_user_id
+            st.rerun()
 else:
-  st.session_state['user_id'] = None
+    st.session_state["user_id"] = None
 
 #ログイン（実験参加者のid認証）
 if st.session_state['user_id'] is None:
