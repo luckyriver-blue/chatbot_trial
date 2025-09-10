@@ -5,7 +5,7 @@ from style_and_javascript.style import hide_st_style, message_style, input_style
 from config.set_llm import llm
 from config.set_firebase import firebase_project_settings
 from talk_bot import ChatBot
-
+import datetime
 
 #スタイリング
 st.markdown(hide_st_style, unsafe_allow_html=True)
@@ -24,14 +24,15 @@ db = firestore.client()
 
 # セッションステートの初期化
 if "user_id" not in st.session_state:
-  st.session_state["user_id"] = None
+    st.session_state["user_id"] = None
 if "input" not in st.session_state:
     st.session_state["input"] = ""
 if "placeholder" not in st.session_state:
-  st.session_state["placeholder"] = ""
+    st.session_state["placeholder"] = ""
 if "messages" not in st.session_state:
-   st.session_state["messages"] = []
-
+    st.session_state["messages"] = []
+if "time" not in st.session_state:
+    st.session_state["time"] = []
 
 #Firebaseから有効な参加者IDを取得する関数
 def get_valid_ids():
@@ -80,17 +81,24 @@ def show_messages():
                 <div style="max-width: 80%;" class="messages">{message["content"]}</div>
                 ''', unsafe_allow_html=True)
             #会話終了後
-            if i >= 6:
-                st.markdown(
-                    f'<br>会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_23orSJSGkW2uu0e?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
-                    unsafe_allow_html=True
-                )
+            if st.session_state["time"] != [] and datetime.datetime.now() - st.session_state["time"] > datetime.timedelta(minutes=10):
+                st.markdown('会話は終了です。')
                 st.stop()
+
+            # if i >= 6:
+            #     st.markdown(
+            #         f'<br>会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_23orSJSGkW2uu0e?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
+            #         unsafe_allow_html=True
+            #     )
+            #     st.stop()
 
             
 
 #送信ボタンが押されたとき
 def send_message():
+    #Firestoreデータまでのアクセス
+    ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation")
+
     input = st.session_state["input"]
     if input == "":
         st.session_state["placeholder"] = "メッセージを入力してください！"
@@ -99,7 +107,10 @@ def send_message():
     st.session_state["placeholder"] = ""
     #新しい入力を追加
     input_message_data = {"role": "human", "content": input, "timestamp": firestore.SERVER_TIMESTAMP}
-    db.collection("users").document(st.session_state["user_id"]).collection("conversation").add(input_message_data)
+    ref.add(input_message_data)
+    #最初の送信だったら、タイマー開始（最初のtimestampを控える）
+    if st.session_state["time"] == []:
+        st.session_state["time"] = datetime.datetime.now()
     st.session_state["messages"].append(input_message_data)
     #新しい入力応答を追加
     bot = ChatBot(llm, user_id=st.session_state["user_id"])
