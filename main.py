@@ -25,6 +25,10 @@ db = firestore.client()
 # セッションステートの初期化
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = None
+
+#Firestoreのデータへのアクセス
+ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation").order_by("timestamp")
+
 if "input" not in st.session_state:
     st.session_state["input"] = ""
 if "placeholder" not in st.session_state:
@@ -32,7 +36,12 @@ if "placeholder" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 if "time" not in st.session_state:
-    st.session_state["time"] = []
+    if st.session_state["messages"] != []:
+        start_time = ref.limit(1).timestamp
+        print(start_time)
+        st.session_state["time"] = start_time
+    else:
+        st.session_state["time"] = []
 
 #Firebaseから有効な参加者IDを取得する関数
 def get_valid_ids():
@@ -47,26 +56,26 @@ def get_valid_ids():
 
 #firebaseからuser_idを通して会話データを取得する
 def read_firebase_talk_data():
-  doc_ref = db.collection("users").document(st.session_state["user_id"])
-  doc = doc_ref.get()
-  data = doc.to_dict()
-  if data is None:
-    talk_data = []
-  else:
-    talk_day_data = data.get("messages", {})
-    talk_data_temporary = talk_day_data.get("messages", {})
-    talk_data = dict(sorted(talk_data_temporary.items(), key=lambda item: int(item[0])))
+    ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation").order_by("timestamp")
+    data = ref.get()
 
-  return talk_data
+    if data is None:
+        talk_data = []
+    else:
+        talk_day_data = data.get("messages", {})
+        talk_data_temporary = talk_day_data.get("messages", {})
+        talk_data = dict(sorted(talk_data_temporary.items(), key=lambda item: int(item[0])))
 
-if st.session_state["messages"] == []:
-  talk_data = read_firebase_talk_data()
-  st.session_state["message"] = talk_data
+    return talk_data
+
+# if st.session_state["messages"] == []:
+#   talk_data = read_firebase_talk_data()
+#   st.session_state["message"] = talk_data
 
 
 #会話履歴の表示
 def show_messages():
-   for i, message in enumerate(st.session_state["messages"]):
+    for i, message in enumerate(st.session_state["messages"]):
         if message["role"] == "human":
             st.markdown(f'''
             <div style="display: flex;">
@@ -80,10 +89,10 @@ def show_messages():
                 st.markdown(f'''
                 <div style="max-width: 80%;" class="messages">{message["content"]}</div>
                 ''', unsafe_allow_html=True)
-            #会話終了後
-            if st.session_state["time"] != [] and datetime.datetime.now() - st.session_state["time"] > datetime.timedelta(minutes=10):
-                st.markdown('会話は終了です。')
-                st.stop()
+    #会話終了後
+    if st.session_state["time"] != [] and datetime.datetime.now() - st.session_state["time"] > datetime.timedelta(minutes=10):
+        st.markdown('会話は終了です。')
+        st.stop()
 
             # if i >= 6:
             #     st.markdown(
