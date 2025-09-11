@@ -3,6 +3,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from typing import Annotated
 from typing_extensions import TypedDict
+import datetime
 
 #会話の状態を型で定義
 class State(TypedDict):
@@ -10,21 +11,28 @@ class State(TypedDict):
 
 #チャットボットのグラフのクラス
 class ChatBot:
-    def __init__(self, llm, user_id): #コンストラクタ
+    def __init__(self, llm, user_id, time): #コンストラクタ
         #user_idが奇数ならAIが相談する
-        if int(user_id) % 2 == 1:
+        if time > datetime.timedelta(minutes=10):
+            system_prompt = """ 
+                会話は終了なので、これ以上の問いかけはせずに、会話を締めくくってください。
+                ユーザーのことをユーザーと呼ばないでください。
+                丁寧な口調で話してください。
+                200文字以内で応答してください。
+            """
+        elif int(user_id) % 2 == 1:
             system_prompt = """ 
                 AIとして、人との関わり方についてユーザーに相談してください。
                 ユーザーのことをユーザーと呼ばないでください。
                 丁寧な口調で話し、会話を促進してください。
-                200文字以内で回答してください。
+                200文字以内で応答してください。
             """
         else:
             system_prompt = """
                 ユーザーの相談に乗ってください。
                 ユーザーのことをユーザーと呼ばないでください。
                 丁寧な口調で話し、会話を促進してください。
-                200文字以内で回答してください。
+                200文字以内で応答してください。
             """
 
         #プロンプトの設定
