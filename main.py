@@ -43,10 +43,9 @@ if "time" not in st.session_state:
     docs = ref.get()
     if docs:
         st.session_state["time"] = docs[0].to_dict()["timestamp"]
-        print("これ時間！！！！", st.session_state["time"])
         st.session_state["messages"] = [doc.to_dict() for doc in docs]
     else:
-        st.session_state["time"] = []
+        st.session_state["time"] = None
         st.session_state["messages"] = []
 
 # #Firebaseから有効な参加者IDを取得する関数
@@ -79,18 +78,13 @@ def show_messages():
                 <div style="max-width: 80%;" class="messages">{message["content"]}</div>
                 ''', unsafe_allow_html=True)
     #会話終了後
-    # if st.session_state["time"] != [] and datetime.datetime.now() - st.session_state["time"] > datetime.timedelta(minutes=10):
-    #     st.markdown('会話は終了です。')
-    #     st.stop()
-
-            # if i >= 6:
-            #     st.markdown(
-            #         f'<br>会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_23orSJSGkW2uu0e?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
-            #         unsafe_allow_html=True
-            #     )
-            #     st.stop()
-
-            
+    if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.utc) - st.session_state["time"] > datetime.timedelta(minutes=10):
+        st.markdown(
+                    f'<br>これで会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_23orSJSGkW2uu0e?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
+                    unsafe_allow_html=True
+        )
+        st.stop()
+  
 
 #送信ボタンが押されたとき
 def send_message():
@@ -107,7 +101,7 @@ def send_message():
     add_ref.add(input_message_data)
     #最初の送信だったら、タイマー開始（最初のtimestampを控える）
     if st.session_state["time"] == []:
-        st.session_state["time"] = datetime.datetime.now()
+        st.session_state["time"] = ref.get()[0].to_dict()["timestamp"]
     st.session_state["messages"].append(input_message_data)
     #新しい入力応答を追加
     bot = ChatBot(llm, user_id=st.session_state["user_id"])
