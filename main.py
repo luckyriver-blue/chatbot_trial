@@ -24,10 +24,15 @@ db = firestore.client()
 
 # セッションステートの初期化
 if "user_id" not in st.session_state:
-    st.session_state["user_id"] = None
+    #ログイン（実験参加者のid認証）
+    user_id = st.text_input("学籍番号を入力してエンターを押してください")
+    if user_id:
+        st.session_state['user_id'] = user_id
+        st.rerun()
+    st.stop()
 
 #Firestoreのデータへのアクセス
-ref = db.collection("users").document("3").collection("conversation").order_by("timestamp")
+ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation").order_by("timestamp")
 
 if "input" not in st.session_state:
     st.session_state["input"] = ""
@@ -40,40 +45,21 @@ if "time" not in st.session_state:
         st.session_state["time"] = docs[0].to_dict()["timestamp"]
         print("これ時間！！！！", st.session_state["time"])
         st.session_state["messages"] = [doc.to_dict() for doc in docs]
-        print(st.session_state["messages"])
-
     else:
         st.session_state["time"] = []
         st.session_state["messages"] = []
 
-#Firebaseから有効な参加者IDを取得する関数
-def get_valid_ids():
-  valid_ids = []
-  users = db.collection("users").stream()
+# #Firebaseから有効な参加者IDを取得する関数
+# def get_valid_ids():
+#   valid_ids = []
+#   users = db.collection("users").stream()
 
-  for user in users:
-    valid_ids.append(user.id)
+#   for user in users:
+#     valid_ids.append(user.id)
   
-  return valid_ids
+#   return valid_ids
 
 
-# #firebaseからuser_idを通して会話データを取得する
-# def read_firebase_talk_data():
-#     add_ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation")
-#     data = add_ref.get()
-
-#     if data is None:
-#         talk_data = []
-#     else:
-#         talk_day_data = data.get("messages", {})
-#         talk_data_temporary = talk_day_data.get("messages", {})
-#         talk_data = dict(sorted(talk_data_temporary.items(), key=lambda item: int(item[0])))
-
-#     return talk_data
-
-# if st.session_state["messages"] == []:
-#   talk_data = read_firebase_talk_data()
-#   st.session_state["message"] = talk_data
 
 
 #会話履歴の表示
@@ -130,30 +116,7 @@ def send_message():
     add_ref.add(output_message_data)
     st.session_state["messages"].append(output_message_data)
 
-valid_ids = get_valid_ids() #有効なユーザーID
-#クエリパラメータからuser_idを取得（あれば）
-query_params = st.experimental_get_query_params()
-if "user_id" in query_params:
-    query_user_id = query_params.get("user_id", [None])[0]
-    if query_user_id != st.session_state["user_id"]:
-        if query_user_id not in valid_ids:
-            st.session_state["user_id"] = None
-        else:
-            st.session_state["user_id"] = query_user_id
-            st.rerun()
-else:
-    st.session_state["user_id"] = None
-
-#ログイン（実験参加者のid認証）
-if st.session_state['user_id'] is None:
-    user_id = st.text_input("クラウドワークスIDを入力してエンターを押してください")
-    if user_id:
-        st.session_state['user_id'] = user_id
-        new_query_params = query_params.copy()
-        new_query_params['user_id'] = [user_id]
-        st.experimental_set_query_params(**new_query_params)
-        st.rerun()
-    st.stop()
+# valid_ids = get_valid_ids() #有効なユーザーID
 
 #条件分け（今はuser_idが奇数ならaiが相談する）
 if int(st.session_state["user_id"]) % 2 == 1:
