@@ -27,21 +27,24 @@ if "user_id" not in st.session_state:
     st.session_state["user_id"] = None
 
 #Firestoreのデータへのアクセス
-ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation").order_by("timestamp")
+ref = db.collection("users").document("3").collection("conversation").order_by("timestamp")
 
 if "input" not in st.session_state:
     st.session_state["input"] = ""
 if "placeholder" not in st.session_state:
     st.session_state["placeholder"] = ""
-if "messages" not in st.session_state:
-    st.session_state["messages"] = []
+#time（開始時間）や、messagesがない場合は、一旦firebase上にないか探す
 if "time" not in st.session_state:
-    if st.session_state["messages"] != []:
-        start_time = ref.limit(1).timestamp
-        print(start_time)
-        st.session_state["time"] = start_time
+    docs = ref.get()
+    if docs:
+        st.session_state["time"] = docs[0].to_dict()["timestamp"]
+        print("これ時間！！！！", st.session_state["time"])
+        st.session_state["messages"] = [doc.to_dict() for doc in docs]
+        print(st.session_state["messages"])
+
     else:
         st.session_state["time"] = []
+        st.session_state["messages"] = []
 
 #Firebaseから有効な参加者IDを取得する関数
 def get_valid_ids():
@@ -54,19 +57,19 @@ def get_valid_ids():
   return valid_ids
 
 
-#firebaseからuser_idを通して会話データを取得する
-def read_firebase_talk_data():
-    ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation").order_by("timestamp")
-    data = ref.get()
+# #firebaseからuser_idを通して会話データを取得する
+# def read_firebase_talk_data():
+#     add_ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation")
+#     data = add_ref.get()
 
-    if data is None:
-        talk_data = []
-    else:
-        talk_day_data = data.get("messages", {})
-        talk_data_temporary = talk_day_data.get("messages", {})
-        talk_data = dict(sorted(talk_data_temporary.items(), key=lambda item: int(item[0])))
+#     if data is None:
+#         talk_data = []
+#     else:
+#         talk_day_data = data.get("messages", {})
+#         talk_data_temporary = talk_day_data.get("messages", {})
+#         talk_data = dict(sorted(talk_data_temporary.items(), key=lambda item: int(item[0])))
 
-    return talk_data
+#     return talk_data
 
 # if st.session_state["messages"] == []:
 #   talk_data = read_firebase_talk_data()
@@ -90,9 +93,9 @@ def show_messages():
                 <div style="max-width: 80%;" class="messages">{message["content"]}</div>
                 ''', unsafe_allow_html=True)
     #会話終了後
-    if st.session_state["time"] != [] and datetime.datetime.now() - st.session_state["time"] > datetime.timedelta(minutes=10):
-        st.markdown('会話は終了です。')
-        st.stop()
+    # if st.session_state["time"] != [] and datetime.datetime.now() - st.session_state["time"] > datetime.timedelta(minutes=10):
+    #     st.markdown('会話は終了です。')
+    #     st.stop()
 
             # if i >= 6:
             #     st.markdown(
@@ -105,9 +108,8 @@ def show_messages():
 
 #送信ボタンが押されたとき
 def send_message():
-    #Firestoreデータまでのアクセス
-    ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation")
-
+    #firestoreへの保存のためのアクセス
+    add_ref = db.collection("users").document(st.session_state["user_id"]).collection("conversation")
     input = st.session_state["input"]
     if input == "":
         st.session_state["placeholder"] = "メッセージを入力してください！"
@@ -116,7 +118,7 @@ def send_message():
     st.session_state["placeholder"] = ""
     #新しい入力を追加
     input_message_data = {"role": "human", "content": input, "timestamp": firestore.SERVER_TIMESTAMP}
-    ref.add(input_message_data)
+    add_ref.add(input_message_data)
     #最初の送信だったら、タイマー開始（最初のtimestampを控える）
     if st.session_state["time"] == []:
         st.session_state["time"] = datetime.datetime.now()
@@ -125,7 +127,7 @@ def send_message():
     bot = ChatBot(llm, user_id=st.session_state["user_id"])
     response = bot.chat(st.session_state["messages"])
     output_message_data = {"role": "ai", "content": response, "timestamp": firestore.SERVER_TIMESTAMP}
-    db.collection("users").document(st.session_state["user_id"]).collection("conversation").add(output_message_data)
+    add_ref.add(output_message_data)
     st.session_state["messages"].append(output_message_data)
 
 valid_ids = get_valid_ids() #有効なユーザーID
