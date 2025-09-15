@@ -4,7 +4,7 @@ firebase_project_settings = {
   "type": "service_account",
   "project_id": "chatbot-test-42baf",
   "private_key_id": os.environ["private_key_id"],
-  "private_key": os.environ["private_key"],
+  "private_key": os.environ["private_key"].replace(r'\n', '\n'),
   "client_email": os.environ["client_email"],
   "client_id": os.environ["client_id"],
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
