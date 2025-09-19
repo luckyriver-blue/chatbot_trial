@@ -111,7 +111,7 @@ if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.
                 unsafe_allow_html=True
     )
     if int(st.session_state["user_id"]) % 2 == 1:
-        st.session_state["messages"].insert(0, {"role": "ai", "content": "人間関係について悩んでいるので相談に乗ってもらえますか。"})
+        st.session_state["messages"].insert(0, {"role": "ai", "content": "相談にのってもらえますか。"})
     else:
         st.session_state["messages"].insert(0, {"role": "ai", "content": "何か相談事はありますか。"})
     show_messages()
@@ -119,11 +119,11 @@ if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.
 else: #最初〜会話中の提示
     #条件分け（今はuser_idが奇数ならaiが相談する）
     if int(st.session_state["user_id"]) % 2 == 1:
-        st.write("お悩み相談に乗りましょう。")
+        st.write("ボットからのお悩み相談に乗りましょう。")
         if st.session_state["messages"] == []:
-            st.session_state["messages"].append({"role": "ai", "content": "人間関係について悩んでいるので相談に乗ってもらえますか。"})
+            st.session_state["messages"].append({"role": "ai", "content": "相談にのってもらえますか。"})
     else:
-        st.write("人間関係に関するお悩みを相談しましょう。")
+        st.write("人間関係に関するお悩みをボットに相談しましょう。")
         if st.session_state["messages"] == []:
             st.session_state["messages"].append({"role": "ai", "content": "何か相談事はありますか。"})
     show_messages()
