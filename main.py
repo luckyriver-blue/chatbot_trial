@@ -107,7 +107,7 @@ def send_message():
 #会話終了後
 if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.utc) - st.session_state["time"] > datetime.timedelta(minutes=10):
     st.markdown(
-                f'<br>これで会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_23orSJSGkW2uu0e?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
+                f'<br>これで会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_bE1oN3lO3QpIiV0?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
                 unsafe_allow_html=True
     )
     if int(st.session_state["user_id"]) % 2 == 1:
