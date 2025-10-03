@@ -34,6 +34,10 @@ if "user_id" not in st.session_state:
     with st.container(horizontal=True, horizontal_alignment="right"):
         if st.button("　開始　", type="primary", disabled=r):
             st.session_state["user_id"] = user_id
+            #nameを一応データベースに保存
+            db.collection("users").document(st.session_state["user_id"]).set({
+                "name": firestore.ArrayUnion([user_name])
+            }, merge=True)
             st.rerun()
     st.stop()
 
