@@ -25,10 +25,20 @@ db = firestore.client()
 # セッションステートの初期化
 if "user_id" not in st.session_state:
     #ログイン（実験参加者のid認証）
-    user_id = st.text_input("学籍番号を入力してエンターを押してください")
-    if user_id:
-        st.session_state['user_id'] = user_id
-        st.rerun()
+    st.text("学籍番号と名前を入力して、開始ボタンを押してください。")
+    user_id = st.text_input("学籍番号")
+    user_name = st.text_input("名前")
+    r = True #開始ボタンは情報入力されないとdisabled
+    if user_id.isdigit() and user_name:
+        r = False
+    with st.container(horizontal=True, horizontal_alignment="right"):
+        if st.button("　開始　", type="primary", disabled=r):
+            st.session_state["user_id"] = user_id
+            #nameを一応データベースに保存
+            db.collection("users").document(st.session_state["user_id"]).set({
+                "name": firestore.ArrayUnion([user_name])
+            }, merge=True)
+            st.rerun()
     st.stop()
 
 #Firestoreのデータへのアクセス
