@@ -130,6 +130,10 @@ def finish():
         _, col2, _ = st.columns([1,2,1])
         if col2.button("続ける"):
             st.session_state["dialog_finish"] = 1
+            if int(st.session_state["user_id"]) % 2 == 1:
+                st.session_state["messages"].insert(0, {"role": "ai", "content": "相談にのってもらえますか。"})
+            else:
+                st.session_state["messages"].insert(0, {"role": "ai", "content": "何か相談事はありますか。"})
             st.rerun()
     with right_col:
         _, col2, _ = st.columns([1,2,1])    
