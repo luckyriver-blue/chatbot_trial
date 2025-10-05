@@ -130,10 +130,11 @@ def finish():
         _, col2, _ = st.columns([1,2,1])
         if col2.button("続ける"):
             st.session_state["dialog_finish"] = 1
-            if int(st.session_state["user_id"]) % 2 == 1:
-                st.session_state["messages"].insert(0, {"role": "ai", "content": "相談にのってもらえますか。"})
-            else:
-                st.session_state["messages"].insert(0, {"role": "ai", "content": "何か相談事はありますか。"})
+            if st.session_state["messages"][0]["role"] == "human":
+                if int(st.session_state["user_id"]) % 2 == 1:
+                    st.session_state["messages"].insert(0, {"role": "ai", "content": "相談にのってもらえますか。"})
+                else:
+                    st.session_state["messages"].insert(0, {"role": "ai", "content": "何か相談事はありますか。"})
             st.rerun()
     with right_col:
         _, col2, _ = st.columns([1,2,1])    
@@ -153,10 +154,11 @@ if st.session_state["dialog_finish"] == 2:
                 f'<br>これで会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_bE1oN3lO3QpIiV0?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
                 unsafe_allow_html=True
     )
-    if int(st.session_state["user_id"]) % 2 == 1:
-        st.session_state["messages"].insert(0, {"role": "ai", "content": "相談にのってもらえますか。"})
-    else:
-        st.session_state["messages"].insert(0, {"role": "ai", "content": "何か相談事はありますか。"})
+    if st.session_state["messages"][0]["role"] == "human":
+        if int(st.session_state["user_id"]) % 2 == 1:
+            st.session_state["messages"].insert(0, {"role": "ai", "content": "相談にのってもらえますか。"})
+        else:
+            st.session_state["messages"].insert(0, {"role": "ai", "content": "何か相談事はありますか。"})
     show_messages()
     st.stop()
 else: #最初〜会話中の提示
