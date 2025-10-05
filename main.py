@@ -142,7 +142,7 @@ def finish():
             st.rerun()
 
 #5分経ったら
-if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.utc) - st.session_state["time"] > datetime.timedelta(minutes=1):
+if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.utc) - st.session_state["time"] > datetime.timedelta(minutes=5):
     if st.session_state["dialog_finish"] == 0:
         finish()
 
