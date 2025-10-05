@@ -57,6 +57,12 @@ if "time" not in st.session_state:
     else:
         st.session_state["time"] = None
         st.session_state["messages"] = []
+#5分経過の会話終了ダイアログを機能させるフラグのようなもの
+#0->5分経ったら表示させる
+#1->一度ダイアログ表示させたのでもう表示させない
+#2->終了ボタン押された
+if "dialog_finish" not in st.session_state:
+    st.session_state["dialog_finish"] = 0
 
 # #Firebaseから有効な参加者IDを取得する関数
 # def get_valid_ids():
@@ -108,14 +114,37 @@ def send_message():
     time = datetime.datetime.now(datetime.timezone.utc) - st.session_state["time"]
     st.session_state["messages"].append(input_message_data)
     #新しい入力応答を追加
-    bot = ChatBot(llm, user_id=st.session_state["user_id"], time=time)
+    bot = ChatBot(llm, user_id=st.session_state["user_id"])
     response = bot.chat(st.session_state["messages"])
     output_message_data = {"role": "ai", "content": response, "timestamp": firestore.SERVER_TIMESTAMP}
     add_ref.add(output_message_data)
     st.session_state["messages"].append(output_message_data)
 
+#5分経った時のダイアログ
+@st.dialog("5分経過しました。")
+def finish():
+    st.title("会話を続けますか？")
+    st.write("このまま続けることもできますし、いつでも下の終了ボタンから会話を終了できます。")
+    left_col, right_col = st.columns(2)
+    with left_col:
+        _, col2, _ = st.columns([1,2,1])
+        if col2.button("続ける"):
+            st.session_state["dialog_finish"] = 1
+            st.rerun()
+    with right_col:
+        _, col2, _ = st.columns([1,2,1])    
+        if col2.button("　終了　", type="primary"):
+            st.session_state["dialog_finish"] = 2
+            st.rerun()
+
+#5分経ったら
+if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.utc) - st.session_state["time"] > datetime.timedelta(minutes=1):
+    if st.session_state["dialog_finish"] == 0:
+        finish()
+
+
 #会話終了後
-if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.utc) - st.session_state["time"] > datetime.timedelta(minutes=10):
+if st.session_state["dialog_finish"] == 2:
     st.markdown(
                 f'<br>これで会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_bE1oN3lO3QpIiV0?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
                 unsafe_allow_html=True
@@ -140,7 +169,7 @@ else: #最初〜会話中の提示
 
 
 with st._bottom:
-    left_col, right_col = st.columns([4,1], vertical_alignment="bottom")
+    left_col, right_col, finish_btn_col = st.columns([4,1,1], vertical_alignment="bottom")
     left_col.text_area(
         "input_message",
         key="input",
@@ -148,4 +177,13 @@ with st._bottom:
         placeholder=st.session_state['placeholder'],
         label_visibility="collapsed",
     )
-    right_col.button("送信", on_click=send_message, use_container_width=True)
+    with right_col:
+        st.button("送信", on_click=send_message, use_container_width=True)
+        
+    #まだ5分経っておらず、ダイアログが表示される前は、終了ボタンを表示しない。
+    if st.session_state["dialog_finish"] == 0:
+        st.stop()
+    with finish_btn_col:
+        if st.button("　終了　", type="primary", use_container_width=True):
+            st.session_state["dialog_finish"] = 2
+            st.rerun()
