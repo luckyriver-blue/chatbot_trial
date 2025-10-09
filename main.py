@@ -151,7 +151,7 @@ if st.session_state["time"] != None and datetime.datetime.now(datetime.timezone.
 #会話終了後
 if st.session_state["dialog_finish"] == 2:
     st.markdown(
-                f'<br>これで会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_bE1oN3lO3QpIiV0?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
+                '<br>会話は終了しました。',
                 unsafe_allow_html=True
     )
     if st.session_state["messages"][0]["role"] == "human":
@@ -160,6 +160,10 @@ if st.session_state["dialog_finish"] == 2:
         else:
             st.session_state["messages"].insert(0, {"role": "ai", "content": "何か相談事はありますか。"})
     show_messages()
+    st.markdown(
+                f'<br>これで会話は終了です。<br><a href="https://nagoyapsychology.qualtrics.com/jfe/form/SV_bE1oN3lO3QpIiV0?user_id={st.session_state["user_id"]}">こちら</a>をクリックしてアンケートに答えてください。',
+                unsafe_allow_html=True
+    )
     st.stop()
 else: #最初〜会話中の提示
     #条件分け（今はuser_idが奇数ならaiが相談する）
